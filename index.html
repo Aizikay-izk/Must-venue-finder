@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MUST Venue Finder</title>
+<style>
+  :root {
+    --primary: #0072ff;
+    --text: #333;
+    --bg: #f8fbff;
+    --card: rgba(255, 255, 255, 0.95);
+    --shadow: 0 10px 30px rgba(0,0,0,0.15);
+    --gradient-light: linear-gradient(270deg, #bfdbfe, #dbeafe, #bfdbfe);
+  }
+
+  body.dark {
+    --text: #e0e0e0;
+    --bg: #0f172a;
+    --card: rgba(15, 23, 42, 0.9);
+    --primary: #4facfe;
+    --gradient-dark: linear-gradient(270deg, #0f172a, #1e40af, #0f172a);
+  }
+
+  * { box-sizing: border-box; margin:0; padding:0; }
+  body {
+    font-family: sans-serif; /* Fallback for offline */
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--gradient-light);
+    background-size: 600% 600%;
+    animation: gradientAnimation 15s ease infinite;
+  }
+
+  body.dark {
+    background: var(--gradient-dark);
+    background-size: 600% 600%;
+    animation: gradientAnimation 15s ease infinite;
+  }
+
+  @keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; }
+
+  header {
+    text-align: center;
+    padding: 30px 20px 10px;
+    color: white;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    width: 100%;
+    animation: bounceIn 1s ease-out;
+  }
+
+  @keyframes bounceIn {
+    0% { opacity: 0; transform: scale(0.3); }
+    50% { opacity: 1; transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+
+  header h1 { margin: 0; font-size: 2.4rem; }
+  .subtitle { font-size: 1.1rem; opacity: 0.9; margin-top: 8px; }
+
+  .controls { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
+  .dark-toggle {
+    background: rgba(255,255,255,0.2);
+    border: none; color: white; padding: 10px;
+    border-radius: 50%; cursor: pointer; font-size: 1.2rem;
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s;
+  }
+  .dark-toggle:hover { transform: scale(1.1); }
+
+  .search-container {
+    position: relative; width: 90%; max-width: 500px; margin: 20px auto;
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  .search-wrapper {
+    display: flex;
+  }
+
+  #searchInput {
+    flex: 1;
+    padding: 16px 20px; font-size: 1.1rem;
+    border: none; outline: none;
+    box-shadow: var(--shadow);
+    border-radius: 50px 0 0 50px;
+  }
+  #searchInput:focus { transform: scale(1.02); box-shadow: 0 15px 35px rgba(0,114,255,0.3); }
+
+  #searchBtn {
+    border: none;
+    background: var(--primary);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 0 50px 50px 0;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: background 0.3s;
+  }
+  #searchBtn:hover { background: #0056cc; }
+
+  .suggestions {
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: var(--card); border-radius: 0 0 20px 20px;
+    max-height: 300px; overflow: auto; z-index: 100;
+    box-shadow: var(--shadow); backdrop-filter: blur(10px);
+  }
+
+  .suggestion {
+    padding: 14px 20px; cursor: pointer; border-bottom: 1px solid #eee;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .suggestion:hover { background: #e3f2fd; transform: translateX(5px); }
+  body.dark .suggestion:hover { background: #1e293b; }
+
+  #result {
+    margin: 30px auto; padding: 25px; background: var(--card);
+    border-radius: 20px; max-width: 700px; width: 90%;
+    box-shadow: var(--shadow); opacity: 0; transform: scale(0.9);
+    transition: all 0.6s ease; backdrop-filter: blur(15px); color: var(--text);
+  }
+  #result.show { opacity: 1; transform: scale(1); }
+  #result h2 { margin-top: 0; color: var(--primary); }
+
+  #result img { max-width: 100%; border-radius: 15px; margin: 15px 0; box-shadow: 0 8px 25px rgba(0,0,0,0.2); animation: fadeIn 1s; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .directions {
+    background: #f0f8ff; padding: 15px; border-radius: 12px;
+    margin: 15px 0; border-left: 5px solid var(--primary); font-size: 1.05rem;
+  }
+  body.dark .directions { background: #1e293b; }
+
+  .code-badge {
+    display: inline-block; background: var(--primary); color: white;
+    padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; margin: 5px; font-weight: 600;
+  }
+
+  .copy-btn, .share-btn {
+    background: #10b981; color: white; border: none;
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; margin-left: 10px;
+    transition: background 0.3s;
+  }
+  .copy-btn:hover, .share-btn:hover { background: #059669; }
+
+  .image-slider {
+    display: flex; overflow-x: auto; gap: 10px; margin: 15px 0;
+    scroll-snap-type: x mandatory; scrollbar-width: thin;
+  }
+  .image-slider img {
+    flex: 0 0 auto; width: 100%; border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2); scroll-snap-align: start;
+    animation: fadeIn 1s;
+  }
+
+  footer {
+    background: rgba(0,0,0,0.8); color: #fff; padding: 40px 20px 20px;
+    margin-top: auto; width: 100%; backdrop-filter: blur(10px);
+  }
+  .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; text-align: left; }
+  .footer-left img { height: 80px; margin-bottom: 15px; }
+  .university-name { font-size: 1.4rem; font-weight: 700; color: #00c6ff; margin-bottom: 8px; }
+  .motto { font-style: italic; opacity: 0.9; line-height: 1.5; margin-bottom: 20px; }
+  .contact-item { margin: 8px 0; }
+  .social-links a { color: white; font-size: 1.8rem; margin-right: 15px; transition: all 0.3s; }
+  .social-links a:hover { color: #00c6ff; transform: translateY(-3px); }
+  .developer { text-align: right; font-size: 0.95rem; opacity: 0.8; margin-top: 20px; }
+
+  @media (max-width: 768px) {
+    .footer-content { grid-template-columns: 1fr; text-align: center; }
+    .developer { text-align: center; }
+    .footer-left img { height: 70px; }
+  }
+</style>
+</head>
+<body>
+
+<main>
+  <header>
+    <h1>MUST Venue Finder</h1>
+    <p class="subtitle">Find any building, lecture hall, or office instantly</p>
+    <div class="controls">
+      <button class="dark-toggle" id="darkToggle" aria-label="Toggle dark mode">🌙</button>
+    </div>
+  </header>
+
+  <div class="search-container">
+    <div class="search-wrapper">
+      <input type="text" id="searchInput" placeholder="Search by code, name, department..." autocomplete="off">
+      <button id="searchBtn">🔍</button>
+    </div>
+    <div class="suggestions" id="suggestions"></div>
+  </div>
+
+  <div id="result"></div>
+</main>
+
+<footer>
+  <div class="footer-content">
+    <div class="footer-left">
+      <img src="mustlogo.jpg" alt="MUST Logo">
+      <div class="university-name">Mbeya University of Science and Technology</div>
+      <div class="motto">
+        To Become a Leading Centre of Excellence for Knowledge, Skills and Applied Education in Science and Technology
+      </div>
+    </div>
+    <div class="footer-middle">
+      <h3>Contact Us</h3>
+      <div class="contact-item">+255 25 295 7544</div>
+      <div class="contact-item">+255 25 295 7542</div>
+      <div class="contact-item">P.O. Box 131, Mbeya - Tanzania</div>
+      <div class="contact-item">must@must.ac.tz</div>
+      <div style="margin-top:20px;">
+        <strong>Follow Us</strong><br>
+        <div class="social-links">
+          <a href="https://facebook.com/must.ac.tz" target="_blank"><img src="fblogo.jpg" alt="Facebook" style="width:32px;height:32px;vertical-align:middle;"></a>
+          <a href="https://twitter.com/mustanzania" target="_blank"><img src="Twitterlogo.jpg" alt="Twitter" style="width:32px;height:32px;vertical-align:middle;"></a>
+          <a href="https://instagram.com/mustanzania" target="_blank"><img src="Instagram.jpg" alt="Instagram" style="width:32px;height:32px;vertical-align:middle;"></a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-right">
+      <div class="developer">
+        <strong>Developer</strong><br>
+        IzK<br>
+        +255 612 431 951
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// === ALL VENUES (Your Final List) ===
+const venues = [
+  { name: "Administrative Block", codes: ["ADMIN","ADMINISTRATIVE","A1"], keywords: ["registry","vice chancellor","administration"], description: "Main administrative building. Registry, VC office, Finance.", directions: "Enter main gate → Go straight → Big white building on your right after 200m", images: ["administrative block.jpg","admin block view2.jpg"] },
+  { name: "Dr. John Magufuli Library", codes: ["LIBRARY","LIB","MAGUFULI LIBRARY"], keywords: ["books","study","e-resources"], description: "The largest library in the region with over 100,000 volumes.", directions: "From main gate: Turn left after 100m → Pass workshop → Library on your right", image: "library-front-view.jpg" },
+  { name: "Lecture Theatre(Nyerere Hall)", codes: ["LTA","LT-A","LECTURE THEATRE A","Nyerere hall","Hall","Nyerere"], keywords: ["big hall","500 seater","exams"], description: "Main large lecture hall used for exams and big events.", directions: "Behind Admin Block → Walk past cafeteria", image: "Nyerere hall.jpg" },
+  { name: "School of Engineering", codes: ["ENG","ENGINEERING","SOE"], keywords: ["mechanical","civil","electrical","labs"], description: "Home to all engineering departments and workshops.", directions: "From gate: Walk past library → Last building on the left before hostels", image: "engineering.jpg" },
+  { name: "Students Dining Hall", codes: ["DINING","DINING HALL","CAFETERIA"], keywords: ["lunch","dining","food"], description: "Main student dining area. Open 7AM - 8PM.", directions: "Center of campus → Between Admin and Lecture blocks", image: "dining-hall.jpg" },
+  { name: "University Workshops", codes: ["WORKSHOPS","WS","UNIVERSITY WORKSHOPS"], keywords: ["labs","practical","engineering workshops"], description: "Facilities for practical engineering and science workshops.", directions: "Next to the School of Engineering → Turn right after library", image: "mechanical workshops.jpg" },
+  { name: "Computer Science Department", codes: ["CSD","COMPUTER SCIENCE","CS DEPT","CoICT"], keywords: ["programming","IT","computer labs"], description: "Department for computer science and information technology courses.", directions: "Inside School of Engineering → Second floor, left wing", image: "computer science.jpg" },
+  { name: "Architecture Department", codes: ["ARCH","ARCHITECTURE","ARCH DEPT"], keywords: ["design","building","drawing labs"], description: "Department specializing in architecture and design.", directions: "Near the main entrance → Building with modern glass facade", image: "architecture.jpg" },
+  { name: "Football Pitch", codes: ["FOOTBALL","FOOTBALL PITCH","SOCCER FIELD"], keywords: ["sports","football","pitch"], description: "Main football field for sports and recreation.", directions: "Behind the hostels → Large green field near the perimeter", image: "football pitch.jpg" },
+  { name: "Basketball Pitch", codes: ["BASKETBALL","BASKETBALL PITCH","BB COURT"], keywords: ["sports","basketball","court"], description: "Outdoor basketball court for students.", directions: "Next to the football pitch → Concrete court with hoops", image: "basketball pitch.jpg" },
+  { name: "New Hostel", codes: ["NEW HOSTEL","NH","NEW DORM"], keywords: ["accommodation","dormitory","new building"], description: "Recently built hostel for student accommodation.", directions: "At the back of campus → Modern building near the sports fields", image: "new hostel.jpg" },
+  { name: "MUSTSO Water Station", codes: ["MUSTSO WATER","WATER STATION","WSO"], keywords: ["water","drinking","station"], description: "Water station managed by MUSTSO for clean drinking water.", directions: "Near the dining hall → Small kiosk with water dispensers", image: "mustso water.jpg" },
+  { name: "Hostel 6A", codes: ["HOSTEL 6A","H6A","DORM 6A"], keywords: ["accommodation","hostel","dormitory"], description: "Hostel block 6A for student housing.", directions: "In the hostel area → Building labeled 6A", image: "hostel 6a.jpg" },
+  { name: "Hostel 6B", codes: ["HOSTEL 6B","H6B","DORM 6B"], keywords: ["accommodation","hostel","dormitory"], description: "Hostel block 6B for student housing.", directions: "Next to Hostel 6A → Building labeled 6B", image: "hostel 6b.jpg" },
+  { name: "LPII-FF LIBRARY PHASE II HALL - FIRST FLOOR", codes: ["LPII-FF","LIBRARY PHASE II","HALL FF"], keywords: ["library","phase ii","hall","first floor","computer science"], description: "Library Phase II Hall on the first floor, often used for computer science activities.", directions: "In the library extension → First floor of Phase II building", image: "library first floor.jpg" }
+];
+
+// Simple fuzzy search function (no Fuse.js for offline)
+function similarity(a, b) {
+  a = a.toLowerCase(); b = b.toLowerCase();
+  return a.includes(b) || b.includes(a);
+}
+
+const searchInput = document.getElementById('searchInput');
+const suggestionsBox = document.getElementById('suggestions');
+const resultDiv = document.getElementById('result');
+let currentIndex = -1;
+
+searchInput.addEventListener('input', () => {
+  const value = searchInput.value.trim().toLowerCase();
+  suggestionsBox.innerHTML = ''; currentIndex = -1;
+  if (!value) return;
+
+  let matches = [];
+  venues.forEach(v => {
+    if (v.codes.some(c => similarity(c, value)) || similarity(v.name, value) || v.keywords.some(k => similarity(k, value))) {
+      matches.push(v);
+    }
+  });
+
+  matches.slice(0, 6).forEach(v => {
+    const div = document.createElement('div'); div.className = 'suggestion';
+    div.innerHTML = `<strong>${v.name}</strong><br><small>${v.codes.join(' · ')}</small>`;
+    div.onclick = () => selectVenue(v);
+    suggestionsBox.appendChild(div);
+  });
+});
+
+function selectVenue(venue) {
+  searchInput.value = venue.name; suggestionsBox.innerHTML = ''; showResult(venue);
+}
+
+function showResult(venue) {
+  const codes = venue.codes.map(c => `<span class="code-badge">${c}</span>`).join('');
+  let imageHtml = '';
+  if (venue.images && Array.isArray(venue.images)) {
+    imageHtml = `<div class="image-slider">`;
+    venue.images.forEach(src => imageHtml += `<img src="${src}" alt="${venue.name}" onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.8s;">`);
+    imageHtml += `</div>`;
+  } else {
+    imageHtml = `<img src="${venue.image}" alt="${venue.name}" onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.8s;">`;
+  }
+
+  resultDiv.innerHTML = `
+    <h2>${venue.name}</h2>
+    <div style="margin:15px 0;">${codes}
+      <button class="copy-btn" onclick="navigator.clipboard.writeText('${venue.codes[0]}')">Copy Code</button>
+      <button class="share-btn" onclick="shareVenue('${venue.name}','${venue.description}')">Share</button>
+    </div>
+    ${imageHtml}
+    <div class="directions"><strong>How to get there:</strong><br>${venue.directions}</div>
+    <p>${venue.description}</p>
+  `;
+  resultDiv.classList.add('show');
+  resultDiv.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// Keyboard navigation
+searchInput.addEventListener('keydown', e => {
+  const items = suggestionsBox.querySelectorAll('.suggestion');
+  if (e.key === 'ArrowDown') { e.preventDefault(); currentIndex = (currentIndex + 1) % items.length; updateHighlight(items); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); currentIndex = currentIndex <= 0 ? items.length-1 : currentIndex-1; updateHighlight(items); }
+  else if (e.key === 'Enter' && currentIndex >= 0) { e.preventDefault(); items[currentIndex].click(); }
+  else if (e.key === 'Enter') {
+    suggestionsBox.innerHTML = '';
+    const value = searchInput.value.toLowerCase();
+    const venue = venues.find(v => v.codes.some(c => similarity(c, value)) || similarity(v.name, value) || v.keywords.some(k => similarity(k, value)));
+    if (venue) selectVenue(venue);
+    else { resultDiv.innerHTML = `<p style="text-align:center;color:#ef4444;">Venue not found. Try "LIB", "ENG", or "Cafeteria"</p>`; resultDiv.classList.add('show'); }
+  }
+});
+function updateHighlight(items) { items.forEach((it,i) => it.classList.toggle('highlighted', i===currentIndex)); }
+
+// Search button click
+document.getElementById('searchBtn').addEventListener('click', () => {
+  const event = new KeyboardEvent('keydown', { key: 'Enter' });
+  searchInput.dispatchEvent(event);
+});
+
+// Dark mode toggle
+document.getElementById('darkToggle').addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  const toggle = document.getElementById('darkToggle');
+  toggle.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+});
+
+// Share
+function shareVenue(name, desc) {
+  if (navigator.share) navigator.share({title:name,text:desc,url:location.href});
+  else alert('Copy this: '+name+' – '+desc);
+}
+
+// Focus input
+window.onload = () => searchInput.focus();
+</script>
+
+</body>
+</html>
